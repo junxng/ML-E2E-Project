@@ -106,7 +106,3 @@ The application will be available at <http://127.0.0.1:8000>
 ## Deployment on Amazon EC2
 
 Instructions for deploying to Amazon EC2 can be found in the [deployment guide](docs/deployment.md).
-
-## License
-
-[MIT](LICENSE)

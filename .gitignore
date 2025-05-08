@@ -26,7 +26,6 @@ ENV/
 env/
 
 # Virtual Environment
-.python-version
 .env
 
 # Log files

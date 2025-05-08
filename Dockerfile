@@ -23,11 +23,11 @@ RUN uv venv --python 3.11 /app/.venv
 # Add virtual environment to PATH
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Copy lock file for deterministic installs
-COPY uv.lock .
+# Copy project files for dependency installation
+COPY pyproject.toml uv.lock ./
 
 # Install dependencies with uv
-RUN uv sync
+RUN uv pip install -e .
 
 # Copy application code
 COPY . .

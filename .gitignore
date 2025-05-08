@@ -40,9 +40,8 @@ logs/
 .DS_Store
 
 # Project specific files
-/qdrant_storage/
-/data/
-/pdfs/
+/qdrant_storage/collections/pdf_collection/
+/data/pdf/
 /uploads/
 
 # Jupyter Notebook

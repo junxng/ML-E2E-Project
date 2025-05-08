@@ -1,1 +1,1 @@
-# EC2-Amazon
+# EC2-Ubuntu

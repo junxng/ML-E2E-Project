@@ -20,8 +20,13 @@ This repository contains a Retrieval-Augmented Generation (RAG) application buil
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/junxng/EC2-Ubuntu.git
-cd EC2-Ubuntu
+git clone https://github.com/junxng/Amazon-EC2-Ubuntu.git
+# or
+git clone git@github.com:junxng/Amazon-EC2-Ubuntu.git
+```
+
+```bash
+cd Amazon-EC2-Ubuntu
 ```
 
 ### 2. Set up environment with `uv`
@@ -49,24 +54,21 @@ pip install uv
 uv venv --python 3.11
 
 # Activate the virtual environment
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+source .venv/bin/activate
 ```
 
 ### 3. Install dependencies
 
 ```bash
-# Install dependencies using uv
 uv sync
 ```
 
 ### 4. Set up environment variables
 
 ```bash
-# Copy the example .env file
 cp .env.example .env
-
-# Edit the .env file with your own configuration
 nvim .env
+# Or any of your own configuration like nano, vim, etc.
 ```
 
 ### 5. Start Qdrant (Vector Database)

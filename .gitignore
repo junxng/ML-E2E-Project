@@ -1,4 +1,3 @@
-# Python files
 __pycache__/
 *.py[cod]
 *$py.class
@@ -24,30 +23,15 @@ var/
 venv/
 ENV/
 env/
-
-# Virtual Environment
-.env
-
-# Log files
 logs/
 *.log
-
-# IDE files
 .idea/
 .vscode/
 *.swp
 *.swo
 .DS_Store
-
-# Project specific files
-/qdrant_storage/collections/pdf_collection/
-/data/pdf/
-/uploads/
-
-# Jupyter Notebook
+/qdrant_storage
 .ipynb_checkpoints
-
-# Distribution / packaging
 .Python
 env/
 build/
@@ -65,11 +49,7 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-
-# Configuration files with sensitive info
 config.local.yaml
-
-# Local development files
 .coverage
 htmlcov/
 .pytest_cache/

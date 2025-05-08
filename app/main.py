@@ -11,12 +11,8 @@ import os
 from app.core.config import settings
 from app.api.routes import router as api_router
 from app.rag.documents import process_pdf
-from app.core.logging_config import configure_logging
 
-# Configure logging to prevent duplication
-configure_logging()
-
-app = FastAPI(title="RAG Application")
+app = FastAPI(title="EC2 Ubuntu")
 
 # Mount static files
 app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")

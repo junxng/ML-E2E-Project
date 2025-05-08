@@ -1,0 +1,244 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f5f5f5;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+h1 {
+    margin-bottom: 30px;
+    text-align: center;
+    color: #2c3e50;
+}
+
+h2 {
+    margin-bottom: 20px;
+    color: #3498db;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+input[type="text"], input[type="file"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+button {
+    padding: 10px 20px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #2980b9;
+}
+
+button.delete-btn {
+    background-color: #e74c3c;
+    padding: 5px 10px;
+    font-size: 14px;
+}
+
+button.delete-btn:hover {
+    background-color: #c0392b;
+}
+
+section {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+}
+
+.result-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+@media (min-width: 768px) {
+    .result-container {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.answer-box, .sources-box {
+    padding: 15px;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    min-height: 200px;
+    background-color: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.alert {
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.alert-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+}
+
+.error-actions {
+    margin-top: 10px;
+}
+
+.reset-button {
+    display: inline-block;
+    padding: 5px 10px;
+    background-color: #17a2b8;
+    color: white;
+    text-decoration: none;
+    border-radius: 3px;
+    font-size: 14px;
+}
+
+.reset-button:hover {
+    background-color: #138496;
+}
+
+/* New styles for better feedback */
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(0, 123, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #007bff;
+    animation: spin 1s linear infinite;
+    margin-right: 10px;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.loading-text {
+    color: #888;
+    font-style: italic;
+}
+
+.error-message {
+    color: #721c24;
+    padding: 10px;
+    background-color: #f8d7da;
+    border-radius: 4px;
+}
+
+.retry-button {
+    padding: 3px 8px;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    margin-left: 10px;
+    cursor: pointer;
+}
+
+.source-item {
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-left: 3px solid #3498db;
+    border-radius: 3px;
+}
+
+.source-content {
+    font-size: 0.9em;
+}
+
+.source-metadata {
+    font-size: 0.8em;
+    color: #666;
+    margin-top: 5px;
+}
+
+.source-metadata span {
+    margin-right: 15px;
+}
+
+.no-sources {
+    color: #888;
+    font-style: italic;
+}
+
+/* Knowledge base table improvements */
+#knowledge-base-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+#knowledge-base-table th {
+    background-color: #f2f2f2;
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: 600;
+}
+
+#knowledge-base-table td {
+    padding: 10px 15px;
+    border-top: 1px solid #eee;
+}
+
+#knowledge-base-table tr:hover {
+    background-color: #f5f5f5;
+}
+
+.empty-kb-message {
+    text-align: center;
+    padding: 20px;
+    color: #777;
+    font-style: italic;
+}
+
+.file-size {
+    white-space: nowrap;
+}
+
+.file-actions {
+    white-space: nowrap;
+}

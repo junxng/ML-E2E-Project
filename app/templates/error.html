@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error - RAG Application</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="error-container">
+            <h1>{{ status_code }} Error</h1>
+            <div class="error-message">{{ detail }}</div>
+            <div class="error-actions">
+                <a href="/" class="button">Return to Home</a>
+                <button onclick="history.back()" class="button secondary">Go Back</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

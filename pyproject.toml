@@ -1,0 +1,24 @@
+[project]
+name = "ec2-amazon"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi[standard]>=0.110.0",
+    "jinja2>=3.1.0",
+    "langchain-community>=0.0.19",
+    "langchain>=0.1.0",
+    "python-dotenv>=1.0.0",
+    "python-multipart>=0.0.9",
+    "uvicorn>=0.27.0",
+    "langchain-openai>=0.0.5",
+    "langchain-text-splitters>=0.0.1",
+    "pypdf>=4.0.0",
+    "faiss-cpu>=1.7.4",
+    "pydantic>=2.5.0",
+    "langgraph>=0.0.19",
+    "bs4>=0.0.1",
+    "qdrant-client>=1.7.0",
+    "langchain-qdrant>=0.2.0",
+]

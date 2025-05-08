@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Application</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>RAG Application</h1>
+        
+        <section class="upload-section">
+            <h2>Upload PDF Document</h2>
+            {% if message %}
+                <div class="alert alert-success">{{ message }}</div>
+            {% endif %}
+            {% if error %}
+                <div class="alert alert-error">
+                    {{ error }}
+                    {% if 'dimension' in error %}
+                    <div class="error-actions">
+                        <a href="/api/reset-vector-store" class="reset-button">Reset Vector Store</a>
+                    </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+            <form action="/upload" method="post" enctype="multipart/form-data">
+                <div class="form-group">
+                    <input type="file" name="file" accept=".pdf" required>
+                </div>
+                <button type="submit">Upload & Process</button>
+            </form>
+        </section>
+        
+        <section class="knowledge-base-section">
+            <h2>Knowledge Base</h2>
+            <div class="knowledge-base-container">
+                <p>Loading knowledge base entries...</p>
+                <table id="knowledge-base-table">
+                    <thead>
+                        <tr>
+                            <th>File Name</th>
+                            <th>Size</th>
+                            <th>Date Added</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="knowledge-base-entries">
+                        <!-- Knowledge base entries will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        
+        <section class="query-section">
+            <h2>Ask a Question</h2>
+            <div class="form-group">
+                <input type="text" id="question" placeholder="Enter your question...">
+                <button id="ask-button">Ask</button>
+            </div>
+            
+            <div class="result-container">
+                <div class="answer-box">
+                    <h3>Answer</h3>
+                    <div id="answer">Ask a question to see the answer here.</div>
+                </div>
+                
+                <div class="sources-box">
+                    <h3>Sources</h3>
+                    <div id="sources">Sources will appear here.</div>
+                </div>
+            </div>
+        </section>
+    </div>
+    
+    <script src="{{ url_for('static', path='/js/script.js') }}"></script>
+</body>
+</html>

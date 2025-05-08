@@ -30,7 +30,7 @@ logs/
 *.swp
 *.swo
 .DS_Store
-/qdrant_storage
+qdrant_storage/
 .ipynb_checkpoints
 .Python
 env/

@@ -1,0 +1,13 @@
+name: "RAG Application CodeQL Config"
+
+queries:
+  - uses: security-and-quality
+  - uses: security-extended
+
+paths:
+  - app
+  - data
+paths-ignore:
+  - '**/*.test.py'
+  - '**/tests/'
+  - 'qdrant_storage/'

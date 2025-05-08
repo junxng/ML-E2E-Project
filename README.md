@@ -76,6 +76,10 @@ nvim .env
 The application uses Qdrant for storing vector embeddings. You need to run it using Docker:
 
 ```bash
+docker pull qdrant/qdrant
+```
+
+```bash
 docker run -p 6333:6333 -p 6334:6334 \
     -v "$(pwd)/qdrant_storage:/qdrant/storage:z" \
     qdrant/qdrant

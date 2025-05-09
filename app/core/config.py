@@ -26,6 +26,11 @@ class Settings:
     BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
     PDF_STORAGE_PATH: Path = BASE_DIR / "data" / "pdfs"
     KNOWLEDGE_BASE_FILE: Path = BASE_DIR / "data" / "knowledge_base.json"
+    
+    # Application Settings
+    MAX_PDF_SIZE_MB: int = int(os.getenv("MAX_PDF_SIZE_MB", "10"))
+    DEBUG: bool = os.getenv("DEBUG", "False").lower() == "true"
+    ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
 
     def __init__(self):
         # Create directories if they don't exist

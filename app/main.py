@@ -40,10 +40,10 @@ async def upload_pdf(request: Request, file: UploadFile = File(...)):
         os.makedirs(settings.PDF_STORAGE_PATH, exist_ok=True)
 
         content = await file.read()
-        if len(content) > 10 * 1024 * 1024:
+        if len(content) > settings.MAX_PDF_SIZE_MB * 1024 * 1024:
             return templates.TemplateResponse(
                 "index.html", 
-                {"request": request, "error": "File is too large. Maximum size is 10MB."}
+                {"request": request, "error": f"File is too large. Maximum size is {settings.MAX_PDF_SIZE_MB}MB."}
             )
             
         if not content:

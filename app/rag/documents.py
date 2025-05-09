@@ -69,11 +69,15 @@ def process_pdf(file_path: str) -> Dict[str, Any]:
             result["error"] = f"File not found: {file_path}"
             return result
         
+        logger.info(f"Processing PDF: {file_path}")
+        
         # Load PDF with error handling
         try:
             loader = PyPDFLoader(file_path)
             documents = loader.load()
+            logger.info(f"Loaded {len(documents)} pages from PDF")
         except Exception as e:
+            logger.error(f"Failed to read PDF file: {str(e)}")
             result["error"] = f"Failed to read PDF file: {str(e)}"
             return result
         
@@ -94,6 +98,7 @@ def process_pdf(file_path: str) -> Dict[str, Any]:
             chunk_overlap=150
         )
         splits = text_splitter.split_documents(documents)
+        logger.info(f"Split document into {len(splits)} chunks")
         
         if not splits:
             result["error"] = "No content extracted from PDF to embed"
@@ -106,28 +111,42 @@ def process_pdf(file_path: str) -> Dict[str, Any]:
             
             # Process in smaller batches to avoid errors
             batch_size = 5
+            logger.info(f"Adding {len(splits)} chunks to vector store in batches of {batch_size}")
+            
             for i in range(0, len(splits), batch_size):
                 batch = splits[i:i+batch_size]
+                batch_end = min(i+batch_size, len(splits))
+                logger.debug(f"Processing batch {i//batch_size + 1}, chunks {i+1}-{batch_end}")
                 vector_store.add_documents(documents=batch)
             
             success = True
+            logger.info("Successfully added all chunks to vector store")
+                
         except Exception as e:
             # In case of failure, try recreating the vector store
             if not success:
                 error_msg = str(e)
+                logger.error(f"Error during embedding: {error_msg}")
+                    
                 if "dimension error" in error_msg.lower():
                     # Clear vector store instance to force recreation
+                    logger.info("Detected dimension error, attempting to recreate vector store")
                     import app.rag.embeddings
                     app.rag.embeddings._vector_store = None
                     
                     # Try again with new vector store
                     try:
+                        logger.info("Retrying with new vector store")
                         vector_store = get_vector_store()
                         for i in range(0, len(splits), batch_size):
                             batch = splits[i:i+batch_size]
+                            batch_end = min(i+batch_size, len(splits))
+                            logger.debug(f"Re-processing batch {i//batch_size + 1}, chunks {i+1}-{batch_end}")
                             vector_store.add_documents(documents=batch)
                         success = True
+                        logger.info("Successfully recovered from dimension error")
                     except Exception as e2:
+                        logger.error(f"Second embedding attempt failed: {str(e2)}")
                         result["error"] = f"Failed to add documents after retry: {str(e2)}"
                         return result
                 else:
@@ -136,11 +155,14 @@ def process_pdf(file_path: str) -> Dict[str, Any]:
         
         # If successful, add to knowledge base
         if success:
+            logger.info(f"Adding {file_path} to knowledge base")
             add_to_knowledge_base(file_path)
+            logger.info(f"PDF processing complete: {file_path}")
             result["success"] = True
             return result
         
     except Exception as e:
+        logger.error(f"Error processing PDF: {str(e)}")
         result["error"] = f"Error processing PDF: {str(e)}"
     
     return result

@@ -93,7 +93,7 @@ This will start Qdrant on the default ports (6333 for HTTP and 6334 for GRPC).
 uv run fastapi run app/main.py
 ```
 
-The application will be available at <http://127.0.0.1:8000>
+The application will be available at <http://<youe-ec2-ip-addr>:8000>
 
 ## Usage
 

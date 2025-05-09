@@ -40,8 +40,7 @@ def get_embeddings():
     
     if _embeddings is None:
         try:
-            if settings.VERBOSE_EMBEDDING:
-                logger.info("Initializing OpenAI embeddings model")
+            logger.info("Initializing OpenAI embeddings model")
                 
             _embeddings = OpenAIEmbeddings(
                 model="text-embedding-3-small",
@@ -50,8 +49,7 @@ def get_embeddings():
                 request_timeout=15.0
             )
             
-            if settings.VERBOSE_EMBEDDING:
-                logger.info("OpenAI embeddings model initialized successfully")
+            logger.info("OpenAI embeddings model initialized successfully")
         except Exception as e:
             logger.error(f"Failed to initialize OpenAI embeddings model: {str(e)}")
             raise RuntimeError(f"OpenAI API error: {str(e)}. Check your API key.")
@@ -66,28 +64,24 @@ def get_vector_store():
     
     if _vector_store is None:
         try:
-            if settings.VERBOSE_EMBEDDING:
-                logger.info("Setting up vector store")
+            logger.info("Setting up vector store")
                 
             embeddings = get_embeddings()
             client = get_qdrant_client()
             collection_name = settings.QDRANT_COLLECTION_NAME
 
             try:
-                if settings.VERBOSE_EMBEDDING:
-                    logger.info(f"Checking if collection {collection_name} exists")
+                logger.info(f"Checking if collection {collection_name} exists")
                 collections = client.get_collections().collections
                 collection_names = [collection.name for collection in collections]
                 
                 if collection_name in collection_names:
-                    if settings.VERBOSE_EMBEDDING:
-                        logger.info(f"Collection {collection_name} exists, checking vector dimensions")
+                    logger.info(f"Collection {collection_name} exists, checking vector dimensions")
                     collection_info = client.get_collection(collection_name=collection_name)
                     current_dim = collection_info.config.params.vectors.size
 
                     if current_dim != 1536:
-                        if settings.VERBOSE_EMBEDDING:
-                            logger.info(f"Recreating collection {collection_name} with correct dimensions (1536)")
+                        logger.info(f"Recreating collection {collection_name} with correct dimensions (1536)")
                         client.delete_collection(collection_name=collection_name)
                         client.create_collection(
                             collection_name=collection_name,
@@ -96,11 +90,9 @@ def get_vector_store():
                                 distance=Distance.COSINE
                             ),
                         )
-                        if settings.VERBOSE_EMBEDDING:
-                            logger.info(f"Collection {collection_name} recreated successfully")
+                        logger.info(f"Collection {collection_name} recreated successfully")
                 else:
-                    if settings.VERBOSE_EMBEDDING:
-                        logger.info(f"Creating new collection {collection_name}")
+                    logger.info(f"Creating new collection {collection_name}")
                     client.create_collection(
                         collection_name=collection_name,
                         vectors_config=VectorParams(
@@ -108,11 +100,9 @@ def get_vector_store():
                             distance=Distance.COSINE
                         ),
                     )
-                    if settings.VERBOSE_EMBEDDING:
-                        logger.info(f"Collection {collection_name} created successfully")
+                    logger.info(f"Collection {collection_name} created successfully")
  
-                if settings.VERBOSE_EMBEDDING:
-                    logger.info("Creating Qdrant vector store instance")
+                logger.info("Creating Qdrant vector store instance")
                 import warnings
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore", category=DeprecationWarning)
@@ -122,8 +112,7 @@ def get_vector_store():
                         embeddings=embeddings,
                     )
                     
-                if settings.VERBOSE_EMBEDDING:
-                    logger.info("Qdrant vector store instance created successfully")
+                logger.info("Qdrant vector store instance created successfully")
                 
             except UnexpectedResponse as e:
                 logger.error(f"Qdrant API error: {str(e)}")

@@ -54,3 +54,4 @@ config.local.yaml
 htmlcov/
 .pytest_cache/
 .mypy_cache/
+\qdrant_storage

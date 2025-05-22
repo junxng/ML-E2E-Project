@@ -1,0 +1,118 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        pip install uv pytest httpx asyncio awscli
+        uv sync
+
+    - name: Run tests
+      run: pytest
+
+  deploy-static-to-s3:
+    runs-on: ubuntu-latest
+    needs: build
+    environment: production # Optional: Use environments for protection rules and secrets
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }} # 🚨 IMPORTANT: Your GitHub Secret for AWS Access Key ID
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }} # 🚨 IMPORTANT: Your GitHub Secret for AWS Secret Access Key
+        aws-region: us-east-1 # 🚨 IMPORTANT: Your AWS Region (us-east-1)
+
+    - name: Sync static files to S3
+      run: |
+        echo "
+🚨🚨🚨 Deploying static files to S3 bucket: s3://my-bucket/static/ 🚨🚨🚨
+"
+        aws s3 sync app/static/ s3://my-bucket/static/ --delete
+        echo "
+✅ Static file deployment to S3 complete. ✅
+"
+
+  deploy-app-to-ec2:
+    runs-on: ubuntu-latest
+    needs: build # Depend only on build. S3 deploy is parallel or can depend on S3 deploy if needed.
+    environment: production # Optional: Use environments for protection rules and secrets
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up SSH agent
+      uses: webfactory/ssh-agent@v0.8.0
+      with:
+        ssh-private-key: ${{ secrets.EC2_SSH_KEY }} # 🚨 IMPORTANT: Your GitHub Secret for EC2 SSH Private Key
+
+    - name: Deploy application code to EC2
+      run: |
+        echo "
+🚨🚨🚨 Deploying application code to EC2 at YOUR_EC2_ADDRESS using user ubuntu 🚨🚨🚨
+"
+        # 🚨 IMPORTANT: Replace YOUR_EC2_ADDRESS with the public IP or hostname of your EC2 instance.
+        ssh -o StrictHostKeyChecking=no ubuntu@YOUR_EC2_ADDRESS << 'EOF'
+        
+        # Navigate to your application directory (modify if needed)
+        # cd /path/to/your/app
+        
+        # Pull the latest code
+        git pull origin main
+        
+        # Set up and activate virtual environment
+        uv venv --python 3.11
+        source .venv/bin/activate
+        
+        # Sync dependencies
+        uv sync
+        
+        # 🚨 IMPORTANT: Your application and Qdrant should be configured to run as persistent
+        # background services on the EC2 instance (e.g., using systemd, supervisord, or docker compose).
+        # Nginx should be configured manually on the EC2 instance to proxy requests to your application
+        # (e.g., on port 8000).
+        # 🚨 IMPORTANT: Static files are now served from S3 (s3://my-bucket/static/).
+        # Ensure your HTML templates reference static assets using their S3 or CloudFront URLs.
+
+        # After pulling the latest code and syncing dependencies, you need to restart
+        # your application and Qdrant services to pick up the changes.
+
+        # Example commands to restart services (replace with your actual service names/commands):
+        # sudo systemctl restart your_app_name.service # if using systemd
+        # sudo systemctl restart qdrant.service    # if using systemd
+        # or
+        # docker restart your_app_container_name qdrant_container_name # if using docker
+        # or other commands based on your setup...
+        
+        # --- End Application Restart Commands ---
+
+        echo "
+✅ Application code deployment to EC2 complete. ✅
+"
+        EOF
+
+    # Optional step to check if the deployment was successful (e.g., hit the health endpoint via Nginx)
+    # - name: Verify Deployment via Nginx
+    #   run: |
+    #     sleep 15 # Give services and Nginx time to start
+    #     # 🚨 IMPORTANT: Replace YOUR_EC2_ADDRESS with your EC2 public IP or domain name
+    #     # curl http://YOUR_EC2_ADDRESS/health 

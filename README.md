@@ -110,3 +110,18 @@ The application will be available at <http://[your-ec2-ip-addr]:8000>
 ## Deployment on Amazon EC2
 
 Instructions for deploying to Amazon EC2 can be found in the [deployment guide](docs/deployment.md).
+
+### Storing EC2 Key Pair for CI/CD
+
+For the automated deployment via GitHub Actions, your EC2 private key should be securely stored as a GitHub Secret.
+
+**Steps:**
+
+1. Go to your GitHub repository settings.
+2. Navigate to 'Secrets and variables' > 'Actions'.
+3. Click 'New repository secret'.
+4. Name the secret `EC2_SSH_KEY` (or the name you configured in the CI/CD workflow `.github/workflows/ci.yml`).
+5. Paste the entire content of your EC2 private key file into the 'Secret' field.
+6. Click 'Add secret'.
+
+The corresponding EC2 public key must be present in the `~/.ssh/authorized_keys` file on your EC2 instance.

@@ -1,0 +1,38 @@
+preprocessing:
+  train_test_split:
+    test_size: 0.2
+    random_state: 42
+    stratify: true
+  
+  feature_engineering:
+    scaling:
+      method: "standard"  # standard, minmax, robust
+      exclude_columns: []
+    
+    feature_selection:
+      method: "selectkbest"  # selectkbest, rfe, variance_threshold
+      k: 15
+      score_func: "f_classif"
+    
+    encoding:
+      categorical:
+        method: "onehot"  # onehot, label, target
+        handle_unknown: "ignore"
+      
+      numerical:
+        handle_missing: "median"  # mean, median, mode, drop
+        outlier_treatment: "iqr"  # iqr, zscore, none
+
+data_quality:
+  remove_duplicates: true
+  handle_missing_values: true
+  missing_threshold: 0.5  # Remove columns with >50% missing values
+  
+validation:
+  cross_validation:
+    cv_folds: 5
+    random_state: 42
+    
+output:
+  save_preprocessor: true
+  feature_names_out: true

@@ -1,0 +1,52 @@
+stages:
+  data_collection:
+    cmd: python ml_pipeline/scripts/data_collection.py
+    deps:
+      - ml_pipeline/scripts/data_collection.py
+      - config/data_config.yaml
+    outs:
+      - ml_pipeline/data/raw/dataset.csv
+    
+  data_preprocessing:
+    cmd: python ml_pipeline/scripts/data_preprocessing.py
+    deps:
+      - ml_pipeline/scripts/data_preprocessing.py
+      - ml_pipeline/data/raw/dataset.csv
+      - config/preprocessing_config.yaml
+    outs:
+      - ml_pipeline/data/processed/train.csv
+      - ml_pipeline/data/processed/test.csv
+      - ml_pipeline/data/processed/features.pkl
+    
+  model_training:
+    cmd: python ml_pipeline/scripts/train_model.py
+    deps:
+      - ml_pipeline/scripts/train_model.py
+      - ml_pipeline/data/processed/train.csv
+      - ml_pipeline/data/processed/features.pkl
+      - config/model_config.yaml
+    outs:
+      - ml_pipeline/models/model.pkl
+      - ml_pipeline/models/metrics.json
+    
+  model_evaluation:
+    cmd: python ml_pipeline/scripts/evaluate_model.py
+    deps:
+      - ml_pipeline/scripts/evaluate_model.py
+      - ml_pipeline/models/model.pkl
+      - ml_pipeline/data/processed/test.csv
+      - ml_pipeline/data/processed/features.pkl
+    metrics:
+      - ml_pipeline/models/evaluation_metrics.json
+    plots:
+      - ml_pipeline/models/confusion_matrix.png
+      - ml_pipeline/models/feature_importance.png
+
+plots:
+  - ml_pipeline/models/training_metrics.json:
+      x: epoch
+      y: 
+        - accuracy
+        - loss
+  - ml_pipeline/models/confusion_matrix.png
+  - ml_pipeline/models/feature_importance.png

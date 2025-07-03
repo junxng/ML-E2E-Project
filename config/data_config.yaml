@@ -1,0 +1,28 @@
+data_sources:
+  primary:
+    type: "synthetic"  # Can be 'api', 'database', 's3', 'synthetic'
+    source: "sklearn_classification"
+    parameters:
+      n_samples: 10000
+      n_features: 20
+      n_informative: 15
+      n_redundant: 5
+      n_classes: 3
+      random_state: 42
+  
+  s3_backup:
+    bucket: "ml-e2e-project-data"
+    prefix: "raw-data/"
+    region: "us-east-1"
+
+data_validation:
+  schema_path: "config/data_schema.yaml"
+  quality_checks:
+    - missing_values_threshold: 0.1
+    - duplicate_threshold: 0.05
+    - outlier_detection: true
+
+output:
+  format: "csv"
+  compression: "gzip"
+  encoding: "utf-8"

@@ -30,7 +30,6 @@ logs/
 *.swp
 *.swo
 .DS_Store
-qdrant_storage/
 .ipynb_checkpoints
 .Python
 env/
@@ -54,4 +53,3 @@ config.local.yaml
 htmlcov/
 .pytest_cache/
 .mypy_cache/
-\qdrant_storage

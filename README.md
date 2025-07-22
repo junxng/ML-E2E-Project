@@ -5,7 +5,7 @@ In this video, we’ll walk you through building a powerful machine learning mod
 1. Docker Desktop (on Mac & Windows) or Docker Engine (on Linux)
 2. Kubectl
 3. Minikube
-4. Python Virtual Environment (venv) - optional
+4. Python Virtual Environment (uv) - optional
 5. kfp
 6. AWS IAM User (with S3 privileges)
 6. AWS S3 Bucket

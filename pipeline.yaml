@@ -1,7 +1,9 @@
 # PIPELINE DEFINITION
 # Name: ml-pipeline
 # Inputs:
-#    s3_bucket: str
+#    aws_access_key_id: str
+#    aws_secret_access_key: str
+#    s3_bucket: str [Default: 'kubeflow-bucket-dungnq49']
 #    s3_key: str [Default: 'models/iris']
 components:
   comp-evaluate-model:
@@ -73,6 +75,10 @@ components:
             schemaTitle: system.Dataset
             schemaVersion: 0.0.1
       parameters:
+        aws_access_key_id:
+          parameterType: STRING
+        aws_secret_access_key:
+          parameterType: STRING
         s3_bucket:
           parameterType: STRING
         s3_key:
@@ -101,9 +107,8 @@ deploymentSpec:
         - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
           \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
           \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.13.0'\
-          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
-          \  python3 -m pip install --quiet --no-warn-script-location 'pandas' 'scikit-learn'\
-          \ 'matplotlib' 'joblib' && \"$0\" \"$@\"\n"
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
         - sh
         - -ec
         - 'program_path=$(mktemp -d)
@@ -116,8 +121,10 @@ deploymentSpec:
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
           \ *\n\ndef evaluate_model(test_data: Input[Dataset], ytest_data: Input[Dataset],\
-          \ model: Input[Model], metrics_output: Output[Dataset]):\n    import pandas\
-          \ as pd\n    from sklearn.metrics import classification_report, confusion_matrix,\
+          \ model: Input[Model], metrics_output: Output[Dataset]):\n    import subprocess\n\
+          \    subprocess.run([\"pip\", \"install\", \"pandas\", \"scikit-learn\"\
+          , \"matplotlib\", \"joblib\"], check=True)\n\n    import pandas as pd\n\
+          \    from sklearn.metrics import classification_report, confusion_matrix,\
           \ accuracy_score\n    import matplotlib.pyplot as plt\n    from joblib import\
           \ load\n\n    # Load test data\n    X_test = pd.read_csv(test_data.path)\n\
           \n    y_test = pd.read_csv(ytest_data.path)  \n\n    # Load model\n    model\
@@ -146,9 +153,8 @@ deploymentSpec:
         - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
           \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
           \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.13.0'\
-          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
-          \  python3 -m pip install --quiet --no-warn-script-location 'pandas' 'scikit-learn'\
-          \ && \"$0\" \"$@\"\n"
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
         - sh
         - -ec
         - 'program_path=$(mktemp -d)
@@ -160,11 +166,13 @@ deploymentSpec:
 
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef load_data(output_csv: Output[Dataset]):\n    from sklearn.datasets\
-          \ import load_iris\n    import pandas as pd\n    iris = load_iris()\n  \
-          \  df = pd.DataFrame(data=iris.data, columns=iris.feature_names)\n    df['target']\
-          \ = iris.target\n\n    # Save the dataset to the output artifact path\n\
-          \    df.to_csv(output_csv.path, index=False)\n\n"
+          \ *\n\ndef load_data(output_csv: Output[Dataset]):\n    import subprocess\n\
+          \    subprocess.run([\"pip\", \"install\", \"pandas\", \"scikit-learn\"\
+          ], check=True)\n\n    from sklearn.datasets import load_iris\n    import\
+          \ pandas as pd\n    iris = load_iris()\n    df = pd.DataFrame(data=iris.data,\
+          \ columns=iris.feature_names)\n    df['target'] = iris.target\n\n    # Save\
+          \ the dataset to the output artifact path\n    df.to_csv(output_csv.path,\
+          \ index=False)\n\n"
         image: python:3.12
     exec-preprocess-data:
       container:
@@ -179,9 +187,8 @@ deploymentSpec:
         - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
           \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
           \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.13.0'\
-          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
-          \  python3 -m pip install --quiet --no-warn-script-location 'pandas' 'scikit-learn'\
-          \ && \"$0\" \"$@\"\n"
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
         - sh
         - -ec
         - 'program_path=$(mktemp -d)
@@ -195,19 +202,21 @@ deploymentSpec:
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
           \ *\n\ndef preprocess_data(input_csv: Input[Dataset], output_train: Output[Dataset],\
           \ output_test: Output[Dataset], \n                    output_ytrain: Output[Dataset],\
-          \ output_ytest: Output[Dataset]):\n    import pandas as pd\n    from sklearn.preprocessing\
-          \ import StandardScaler\n    from sklearn.model_selection import train_test_split\n\
-          \n    # Load dataset\n    df = pd.read_csv(input_csv.path)\n\n    # Debug:\
-          \ Check for NaN values\n    print(\"Initial dataset shape:\", df.shape)\n\
-          \    print(\"Missing values before preprocessing:\\n\", df.isnull().sum())\n\
-          \n    # Handle missing values\n    if df.isnull().values.any():\n      \
-          \  print(\"Missing values detected. Handling them...\")\n        df = df.dropna()\
-          \  # Drop rows with any NaN values\n\n    # Validate that there are no NaNs\
-          \ in the target column\n    assert not df['target'].isnull().any(), \"Target\
-          \ column contains NaN values after handling missing values.\"\n\n    features\
-          \ = df.drop(columns=['target'])\n    target = df['target']\n\n    # Standardize\
-          \ features\n    scaler = StandardScaler()\n    scaled_features = scaler.fit_transform(features)\n\
-          \n    # Train-test split\n    X_train, X_test, y_train, y_test = train_test_split(scaled_features,\
+          \ output_ytest: Output[Dataset]):\n    import subprocess\n    subprocess.run([\"\
+          pip\", \"install\", \"pandas\", \"scikit-learn\"], check=True)\n\n    import\
+          \ pandas as pd\n    from sklearn.preprocessing import StandardScaler\n \
+          \   from sklearn.model_selection import train_test_split\n\n    # Load dataset\n\
+          \    df = pd.read_csv(input_csv.path)\n\n    # Debug: Check for NaN values\n\
+          \    print(\"Initial dataset shape:\", df.shape)\n    print(\"Missing values\
+          \ before preprocessing:\\n\", df.isnull().sum())\n\n    # Handle missing\
+          \ values\n    if df.isnull().values.any():\n        print(\"Missing values\
+          \ detected. Handling them...\")\n        df = df.dropna()  # Drop rows with\
+          \ any NaN values\n\n    # Validate that there are no NaNs in the target\
+          \ column\n    assert not df['target'].isnull().any(), \"Target column contains\
+          \ NaN values after handling missing values.\"\n\n    features = df.drop(columns=['target'])\n\
+          \    target = df['target']\n\n    # Standardize features\n    scaler = StandardScaler()\n\
+          \    scaled_features = scaler.fit_transform(features)\n\n    # Train-test\
+          \ split\n    X_train, X_test, y_train, y_test = train_test_split(scaled_features,\
           \ target, test_size=0.2, random_state=42)\n\n    # Debug: Validate splits\n\
           \    print(\"Shapes after train-test split:\")\n    print(\"X_train:\",\
           \ X_train.shape, \"X_test:\", X_test.shape) \n    print(\"y_train:\", y_train.shape,\
@@ -253,9 +262,10 @@ deploymentSpec:
 
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef train_model(\n    train_data: Input[Dataset],\n    ytrain_data:\
-          \ Input[Dataset],\n    model_output: Output[Model],\n    s3_bucket: str,\n\
-          \    s3_key: str\n) -> str:\n    import pandas as pd\n    from sklearn.linear_model\
+          \ *\n\ndef train_model(\n    train_data: Input[Dataset], \n    ytrain_data:\
+          \ Input[Dataset], \n    model_output: Output[Model],\n    aws_access_key_id:\
+          \ str,\n    aws_secret_access_key: str,\n    s3_bucket: str,\n    s3_key:\
+          \ str\n) -> str:\n    import pandas as pd\n    from sklearn.linear_model\
           \ import LogisticRegression\n    from joblib import dump\n    import boto3\n\
           \    import os\n    from datetime import datetime\n    import json\n\n \
           \   # Load training data\n    train_df = pd.read_csv(train_data.path)\n\
@@ -268,10 +278,11 @@ deploymentSpec:
           \ = LogisticRegression()\n    model.fit(X_train, y_train)\n\n    # First\
           \ save model locally\n    local_path = model_output.path\n    dump(model,\
           \ local_path)\n    print(f\"Model saved locally to: {local_path}\")\n\n\
-          \    try:\n        # Initialize S3 client, assuming credentials are in the\
-          \ environment\n        s3_client = boto3.client('s3')\n\n        # Upload\
-          \ to S3\n        timestamp = datetime.now().strftime(\"%Y%m%d_%H%M%S\")\n\
-          \        s3_path = f\"{s3_key}/model_{timestamp}.joblib\"\n\n        s3_client.upload_file(\n\
+          \    try:\n        # Initialize S3 client\n        s3_client = boto3.client(\n\
+          \            's3',\n            aws_access_key_id=aws_access_key_id,\n \
+          \           aws_secret_access_key=aws_secret_access_key\n        )\n\n \
+          \       # Upload to S3\n        timestamp = datetime.now().strftime(\"%Y%m%d_%H%M%S\"\
+          )\n        s3_path = f\"{s3_key}/model_{timestamp}.joblib\"\n\n        s3_client.upload_file(\n\
           \            local_path,\n            s3_bucket,\n            s3_path\n\
           \        )\n        print(f\"Model uploaded to s3://{s3_bucket}/{s3_path}\"\
           )\n\n        # Create outputs directory if it doesn't exist\n        os.makedirs('/tmp/outputs',\
@@ -353,6 +364,10 @@ root:
                 outputArtifactKey: output_ytrain
                 producerTask: preprocess-data
           parameters:
+            aws_access_key_id:
+              componentInputParameter: aws_access_key_id
+            aws_secret_access_key:
+              componentInputParameter: aws_secret_access_key
             s3_bucket:
               componentInputParameter: s3_bucket
             s3_key:
@@ -361,7 +376,15 @@ root:
           name: train-model
   inputDefinitions:
     parameters:
+      aws_access_key_id:
+        isOptional: true
+        parameterType: STRING
+      aws_secret_access_key:
+        isOptional: true
+        parameterType: STRING
       s3_bucket:
+        defaultValue: kubeflow-bucket-dungnq49
+        isOptional: true
         parameterType: STRING
       s3_key:
         defaultValue: models/iris

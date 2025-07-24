@@ -7,11 +7,11 @@ import json
 import os 
 
 # Step 1: Load Dataset
-@dsl.component(base_image="python:3.12")
+@dsl.component(
+    base_image="python:3.12",
+    packages_to_install=["pandas", "scikit-learn"]
+)
 def load_data(output_csv: Output[Dataset]):
-    import subprocess
-    subprocess.run(["pip", "install", "pandas", "scikit-learn"], check=True)
-
     from sklearn.datasets import load_iris
     import pandas as pd
     iris = load_iris()
@@ -22,12 +22,12 @@ def load_data(output_csv: Output[Dataset]):
     df.to_csv(output_csv.path, index=False)
 
 # Step 2: Preprocess Data
-@dsl.component(base_image="python:3.12")
+@dsl.component(
+    base_image="python:3.12",
+    packages_to_install=["pandas", "scikit-learn"]
+)
 def preprocess_data(input_csv: Input[Dataset], output_train: Output[Dataset], output_test: Output[Dataset], 
                     output_ytrain: Output[Dataset], output_ytest: Output[Dataset]):
-    import subprocess
-    subprocess.run(["pip", "install", "pandas", "scikit-learn"], check=True)
-
     import pandas as pd
     from sklearn.preprocessing import StandardScaler
     from sklearn.model_selection import train_test_split
@@ -99,11 +99,9 @@ def preprocess_data(input_csv: Input[Dataset], output_train: Output[Dataset], ou
     ]
 )
 def train_model(
-    train_data: Input[Dataset], 
-    ytrain_data: Input[Dataset], 
+    train_data: Input[Dataset],
+    ytrain_data: Input[Dataset],
     model_output: Output[Model],
-    aws_access_key_id: str,
-    aws_secret_access_key: str,
     s3_bucket: str,
     s3_key: str
 ) -> str:
@@ -139,12 +137,8 @@ def train_model(
     print(f"Model saved locally to: {local_path}")
 
     try:
-        # Initialize S3 client
-        s3_client = boto3.client(
-            's3',
-            aws_access_key_id=aws_access_key_id,
-            aws_secret_access_key=aws_secret_access_key
-        )
+        # Initialize S3 client, assuming credentials are in the environment
+        s3_client = boto3.client('s3')
 
         # Upload to S3
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -177,11 +171,11 @@ def train_model(
         raise
 
 # Step 4: Evaluate Model
-@dsl.component(base_image="python:3.12")
+@dsl.component(
+    base_image="python:3.12",
+    packages_to_install=["pandas", "scikit-learn", "matplotlib", "joblib"]
+)
 def evaluate_model(test_data: Input[Dataset], ytest_data: Input[Dataset], model: Input[Model], metrics_output: Output[Dataset]):
-    import subprocess
-    subprocess.run(["pip", "install", "pandas", "scikit-learn", "matplotlib", "joblib"], check=True)
-
     import pandas as pd
     from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
     import matplotlib.pyplot as plt
@@ -222,9 +216,7 @@ def evaluate_model(test_data: Input[Dataset], ytest_data: Input[Dataset], model:
 # Define the pipeline
 @dsl.pipeline(name="ml-pipeline")
 def ml_pipeline(
-    aws_access_key_id: str = os.getenv('AWS_ACCESS_KEY_ID'),
-    aws_secret_access_key: str = os.getenv('AWS_SECRET_ACCESS_KEY'),
-    s3_bucket: str = "kubeflow-bucket-dungnq49",
+    s3_bucket: str,
     s3_key: str = "models/iris"
 ):
     # Step 1: Load Dataset
@@ -237,8 +229,6 @@ def ml_pipeline(
     train_op = train_model(
         train_data=preprocess_op.outputs["output_train"],
         ytrain_data=preprocess_op.outputs["output_ytrain"],
-        aws_access_key_id=aws_access_key_id,
-        aws_secret_access_key=aws_secret_access_key,
         s3_bucket=s3_bucket,
         s3_key=s3_key
     )

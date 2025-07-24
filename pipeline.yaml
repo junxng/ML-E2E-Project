@@ -1,0 +1,394 @@
+# PIPELINE DEFINITION
+# Name: ml-pipeline
+# Inputs:
+#    aws_access_key_id: str
+#    aws_secret_access_key: str
+#    s3_bucket: str [Default: 'kubeflow-bucket-dungnq49']
+#    s3_key: str [Default: 'models/iris']
+components:
+  comp-evaluate-model:
+    executorLabel: exec-evaluate-model
+    inputDefinitions:
+      artifacts:
+        model:
+          artifactType:
+            schemaTitle: system.Model
+            schemaVersion: 0.0.1
+        test_data:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+        ytest_data:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+    outputDefinitions:
+      artifacts:
+        metrics_output:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+  comp-load-data:
+    executorLabel: exec-load-data
+    outputDefinitions:
+      artifacts:
+        output_csv:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+  comp-preprocess-data:
+    executorLabel: exec-preprocess-data
+    inputDefinitions:
+      artifacts:
+        input_csv:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+    outputDefinitions:
+      artifacts:
+        output_test:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+        output_train:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+        output_ytest:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+        output_ytrain:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+  comp-train-model:
+    executorLabel: exec-train-model
+    inputDefinitions:
+      artifacts:
+        train_data:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+        ytrain_data:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+      parameters:
+        aws_access_key_id:
+          parameterType: STRING
+        aws_secret_access_key:
+          parameterType: STRING
+        s3_bucket:
+          parameterType: STRING
+        s3_key:
+          parameterType: STRING
+    outputDefinitions:
+      artifacts:
+        model_output:
+          artifactType:
+            schemaTitle: system.Model
+            schemaVersion: 0.0.1
+      parameters:
+        Output:
+          parameterType: STRING
+deploymentSpec:
+  executors:
+    exec-evaluate-model:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - evaluate_model
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.13.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef evaluate_model(test_data: Input[Dataset], ytest_data: Input[Dataset],\
+          \ model: Input[Model], metrics_output: Output[Dataset]):\n    import subprocess\n\
+          \    subprocess.run([\"pip\", \"install\", \"pandas\", \"scikit-learn\"\
+          , \"matplotlib\", \"joblib\"], check=True)\n\n    import pandas as pd\n\
+          \    from sklearn.metrics import classification_report, confusion_matrix,\
+          \ accuracy_score\n    import matplotlib.pyplot as plt\n    from joblib import\
+          \ load\n\n    # Load test data\n    X_test = pd.read_csv(test_data.path)\n\
+          \n    y_test = pd.read_csv(ytest_data.path)  \n\n    # Load model\n    model\
+          \ = load(model.path)\n\n    # Predict\n    y_pred = model.predict(X_test)\n\
+          \n    # Generate metrics\n    report = classification_report(y_test, y_pred,\
+          \ output_dict=True)\n    cm = confusion_matrix(y_test, y_pred)\n    accuracy\
+          \ = accuracy_score(y_test, y_pred) \n\n    # Save metrics to a file\n  \
+          \  metrics_path = metrics_output.path\n    with open(metrics_path, 'w')\
+          \ as f:\n        f.write(f\"Accuracy: {accuracy}\\n\")  # Add accuracy to\
+          \ the metrics file\n        f.write(str(report))\n\n    # Plot confusion\
+          \ matrix\n    plt.figure(figsize=(8, 6))\n    plt.imshow(cm, interpolation='nearest',\
+          \ cmap=plt.cm.Blues)\n    plt.title('Confusion Matrix')\n    plt.colorbar()\n\
+          \    plt.xlabel('Predicted Label')\n    plt.ylabel('True Label')\n    plt.savefig(metrics_path.replace('.txt',\
+          \ '.png'))\n\n"
+        image: python:3.12
+    exec-load-data:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - load_data
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.13.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef load_data(output_csv: Output[Dataset]):\n    import subprocess\n\
+          \    subprocess.run([\"pip\", \"install\", \"pandas\", \"scikit-learn\"\
+          ], check=True)\n\n    from sklearn.datasets import load_iris\n    import\
+          \ pandas as pd\n    iris = load_iris()\n    df = pd.DataFrame(data=iris.data,\
+          \ columns=iris.feature_names)\n    df['target'] = iris.target\n\n    # Save\
+          \ the dataset to the output artifact path\n    df.to_csv(output_csv.path,\
+          \ index=False)\n\n"
+        image: python:3.12
+    exec-preprocess-data:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - preprocess_data
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.13.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef preprocess_data(input_csv: Input[Dataset], output_train: Output[Dataset],\
+          \ output_test: Output[Dataset], \n                    output_ytrain: Output[Dataset],\
+          \ output_ytest: Output[Dataset]):\n    import subprocess\n    subprocess.run([\"\
+          pip\", \"install\", \"pandas\", \"scikit-learn\"], check=True)\n\n    import\
+          \ pandas as pd\n    from sklearn.preprocessing import StandardScaler\n \
+          \   from sklearn.model_selection import train_test_split\n\n    # Load dataset\n\
+          \    df = pd.read_csv(input_csv.path)\n\n    # Debug: Check for NaN values\n\
+          \    print(\"Initial dataset shape:\", df.shape)\n    print(\"Missing values\
+          \ before preprocessing:\\n\", df.isnull().sum())\n\n    # Handle missing\
+          \ values\n    if df.isnull().values.any():\n        print(\"Missing values\
+          \ detected. Handling them...\")\n        df = df.dropna()  # Drop rows with\
+          \ any NaN values\n\n    # Validate that there are no NaNs in the target\
+          \ column\n    assert not df['target'].isnull().any(), \"Target column contains\
+          \ NaN values after handling missing values.\"\n\n    features = df.drop(columns=['target'])\n\
+          \    target = df['target']\n\n    # Standardize features\n    scaler = StandardScaler()\n\
+          \    scaled_features = scaler.fit_transform(features)\n\n    # Train-test\
+          \ split\n    X_train, X_test, y_train, y_test = train_test_split(scaled_features,\
+          \ target, test_size=0.2, random_state=42)\n\n    # Debug: Validate splits\n\
+          \    print(\"Shapes after train-test split:\")\n    print(\"X_train:\",\
+          \ X_train.shape, \"X_test:\", X_test.shape) \n    print(\"y_train:\", y_train.shape,\
+          \ \"y_test:\", y_test.shape)\n    print(\"Missing values in y_train:\",\
+          \ y_train.isnull().sum())\n\n    # Ensure no NaNs in the split data\n  \
+          \  assert not y_train.isnull().any(), \"y_train contains NaN values.\"\n\
+          \    assert not y_test.isnull().any(), \"y_test contains NaN values.\"\n\
+          \n    # Create DataFrames for train and test sets\n    X_train_df = pd.DataFrame(X_train,\
+          \ columns=features.columns)\n    print(\"X_train_df:\", X_train_df) \n\n\
+          \    y_train_df = pd.DataFrame(y_train) \n    print(\"y_train_df: \", y_train_df)\
+          \  \n\n    X_test_df = pd.DataFrame(X_test, columns=features.columns)\n\
+          \    print(\"X_test_df:\", X_test_df) \n\n    y_test_df = pd.DataFrame(y_test)\
+          \ \n    print(\"y_test_df: \", y_test_df) \n\n    # Save processed train\
+          \ and test data\n    X_train_df.to_csv(output_train.path, index=False) \
+          \ \n    X_test_df.to_csv(output_test.path, index=False)\n\n    y_train_df.to_csv(output_ytrain.path,\
+          \ index=False)  \n    y_test_df.to_csv(output_ytest.path, index=False) \n\
+          \n"
+        image: python:3.12
+    exec-train-model:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - train_model
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.13.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
+          \  python3 -m pip install --quiet --no-warn-script-location 'pandas' 'scikit-learn'\
+          \ 'joblib' 'boto3' 's3fs' && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef train_model(\n    train_data: Input[Dataset], \n    ytrain_data:\
+          \ Input[Dataset], \n    model_output: Output[Model],\n    aws_access_key_id:\
+          \ str,\n    aws_secret_access_key: str,\n    s3_bucket: str,\n    s3_key:\
+          \ str\n) -> str:\n    import pandas as pd\n    from sklearn.linear_model\
+          \ import LogisticRegression\n    from joblib import dump\n    import boto3\n\
+          \    import os\n    from datetime import datetime\n    import json\n\n \
+          \   # Load training data\n    train_df = pd.read_csv(train_data.path)\n\
+          \    print(\"Shape of train_df:\", train_df.shape)\n    X_train = train_df\
+          \ \n\n    y_train = pd.read_csv(ytrain_data.path)\n    print(\"Shape of\
+          \ ytrain_df:\", y_train.shape)\n    y_train = y_train.values.ravel()  #\
+          \ Fix the column-vector warning\n\n    # Debug: Validate splits\n    print(\"\
+          Shapes of X_train and y_train: \")\n    print(\"X_train:\", X_train.shape)\n\
+          \    print(\"y_train:\", y_train.shape) \n\n    # Train model\n    model\
+          \ = LogisticRegression()\n    model.fit(X_train, y_train)\n\n    # First\
+          \ save model locally\n    local_path = model_output.path\n    dump(model,\
+          \ local_path)\n    print(f\"Model saved locally to: {local_path}\")\n\n\
+          \    try:\n        # Initialize S3 client\n        s3_client = boto3.client(\n\
+          \            's3',\n            aws_access_key_id=aws_access_key_id,\n \
+          \           aws_secret_access_key=aws_secret_access_key\n        )\n\n \
+          \       # Upload to S3\n        timestamp = datetime.now().strftime(\"%Y%m%d_%H%M%S\"\
+          )\n        s3_path = f\"{s3_key}/model_{timestamp}.joblib\"\n\n        s3_client.upload_file(\n\
+          \            local_path,\n            s3_bucket,\n            s3_path\n\
+          \        )\n        print(f\"Model uploaded to s3://{s3_bucket}/{s3_path}\"\
+          )\n\n        # Create outputs directory if it doesn't exist\n        os.makedirs('/tmp/outputs',\
+          \ exist_ok=True)\n\n        # Save S3 path to metadata\n        metadata_path\
+          \ = '/tmp/outputs/output_metadata.json'\n        model_uri = f\"s3://{s3_bucket}/{s3_path}\"\
+          \n        with open(metadata_path, 'w') as f:\n            json.dump({\n\
+          \                'model_s3_path': model_uri\n            }, f)\n       \
+          \ print(f\"Metadata saved to: {metadata_path}\")\n\n        print(f\"Returning\
+          \ model URI: {model_uri}\")\n        return model_uri  # Return the S3 URI\
+          \ as a string\n\n    except Exception as e:\n        print(f\"Error uploading\
+          \ to S3: {str(e)}\")\n        raise\n\n"
+        image: python:3.12
+pipelineInfo:
+  name: ml-pipeline
+root:
+  dag:
+    tasks:
+      evaluate-model:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-evaluate-model
+        dependentTasks:
+        - preprocess-data
+        - train-model
+        inputs:
+          artifacts:
+            model:
+              taskOutputArtifact:
+                outputArtifactKey: model_output
+                producerTask: train-model
+            test_data:
+              taskOutputArtifact:
+                outputArtifactKey: output_test
+                producerTask: preprocess-data
+            ytest_data:
+              taskOutputArtifact:
+                outputArtifactKey: output_ytest
+                producerTask: preprocess-data
+        taskInfo:
+          name: evaluate-model
+      load-data:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-load-data
+        taskInfo:
+          name: load-data
+      preprocess-data:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-preprocess-data
+        dependentTasks:
+        - load-data
+        inputs:
+          artifacts:
+            input_csv:
+              taskOutputArtifact:
+                outputArtifactKey: output_csv
+                producerTask: load-data
+        taskInfo:
+          name: preprocess-data
+      train-model:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-train-model
+        dependentTasks:
+        - preprocess-data
+        inputs:
+          artifacts:
+            train_data:
+              taskOutputArtifact:
+                outputArtifactKey: output_train
+                producerTask: preprocess-data
+            ytrain_data:
+              taskOutputArtifact:
+                outputArtifactKey: output_ytrain
+                producerTask: preprocess-data
+          parameters:
+            aws_access_key_id:
+              componentInputParameter: aws_access_key_id
+            aws_secret_access_key:
+              componentInputParameter: aws_secret_access_key
+            s3_bucket:
+              componentInputParameter: s3_bucket
+            s3_key:
+              componentInputParameter: s3_key
+        taskInfo:
+          name: train-model
+  inputDefinitions:
+    parameters:
+      aws_access_key_id:
+        isOptional: true
+        parameterType: STRING
+      aws_secret_access_key:
+        isOptional: true
+        parameterType: STRING
+      s3_bucket:
+        defaultValue: kubeflow-bucket-dungnq49
+        isOptional: true
+        parameterType: STRING
+      s3_key:
+        defaultValue: models/iris
+        isOptional: true
+        parameterType: STRING
+schemaVersion: 2.1.0
+sdkVersion: kfp-2.13.0

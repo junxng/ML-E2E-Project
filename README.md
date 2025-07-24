@@ -18,11 +18,11 @@ In this project, I’ll walk you through building a powerful machine learning mo
 ```t3.2xlarge``` with 8 CPUs, 32 GiB Memory, 80 GiB Storage => $0.33 per hour
 
 ```sh
-chmod 400 'default.pem' # Key pair
+chmod 400 'default.pem' # Your key pair
 ```
 
 ```sh
-ssh -i 'default.pem' ubuntu@ec2-34-239-159-220.compute-1.amazonaws.com # Public DNS
+ssh -i 'default.pem' ubuntu@ec2-34-239-159-220.compute-1.amazonaws.com # Your Public DNS
 ```
 
 
@@ -36,7 +36,7 @@ SECURITY_GROUP_ID=$(aws ec2 describe-instances --instance-ids 'i-0b4e2420c7ca6c0
 1. Port 22: SSH
 
 ```sh
-# aws ec2 authorize-security-group-ingress --group-id $SECURITY_GROUP_ID --protocol tcp --port 22 --cidr 0.0.0.0/0 => # Already done it by default
+aws ec2 authorize-security-group-ingress --group-id $SECURITY_GROUP_ID --protocol tcp --port 22 --cidr 0.0.0.0/0
 ```
 
 2. Port 80, 443: HTTP & HTTPS
@@ -171,8 +171,8 @@ which kfp
 uv add kfp
 ```
 
-
-	@@ -125,25 +190,28 @@ kubectl get all -n kubeflow
+```sh
+kubectl get all -n kubeflow
 kubectl port-forward -n kubeflow svc/ml-pipeline-ui 8080:80
 ```
 
@@ -186,7 +186,7 @@ kubectl port-forward -n kubeflow svc/ml-pipeline-ui 8080:80 &
 
 ```sh
 cd Downloads
-ssh -i <keypair> -L 8080:localhost:8080 -N ubuntu@<Public_ip>
+ssh -i 'default.pem' -L 8080:localhost:8080 -N ubuntu@ec2-34-239-159-220.compute-1.amazonaws.com
 ```
 
 #### On your Browser
@@ -200,8 +200,10 @@ localhost:8080
 
 ```sh
 source .venv/bin/activate
-
-	@@ -154,44 +222,62 @@ kfp pipeline create -p IrisProject pipeline.yaml
+touch pipeline.py # Copy your code here
+uv run pipeline.py
+kfp pipeline create -p IrisProject pipeline.yaml
+```
 
 
 ## Set Up AWS User and Access Keys  
@@ -264,7 +266,8 @@ Inspect the bucket for the trained ML model (.joblib file)
 ## Install Helm 
 
 ```sh
-	@@ -200,6 +286,7 @@ sudo snap install helm --classic
+sudo snap install helm --classic
+```
 
 
 ## Install and Verify Istio, Cert Manager, Knative & KServe
@@ -272,7 +275,12 @@ Inspect the bucket for the trained ML model (.joblib file)
 ```sh
 curl -s "https://raw.githubusercontent.com/kserve/kserve/release-0.14/hack/quick_install.sh" | bash
 ```
-	@@ -212,24 +299,28 @@ kubectl get pods -n knative-serving
+
+```sh
+kubectl get pods -n kserve
+kubectl get pods -n istio-system
+kubectl get pods -n knative-serving
+```
 
 
 ## Expose KServe via Minikube's ingress
@@ -300,8 +308,8 @@ minikube tunnel
 
 ```sh
 minikube ip
+kubectl get svc istio-ingressgateway -n istio-system
 ```
-	@@ -240,17 +331,22 @@ kubectl get svc istio-ingressgateway -n istio-system
 
 ```sh
 export INGRESS_HOST=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
@@ -324,7 +332,17 @@ kubectl create namespace kserve-test
 ```sh
 kubectl apply -n kserve-test -f - <<EOF
   apiVersion: "serving.kserve.io/v1beta1"
-	@@ -268,24 +364,28 @@ EOF
+  kind: "InferenceService"
+  metadata:
+    name: "sklearn-iris"
+  spec:
+    predictor:
+      model:
+        modelFormat:
+          name: sklearn
+        storageUri: "gs://kfserving-examples/models/sklearn/1.0/model"
+EOF
+```
 
 
 ## Check the InferenceService (May show READY: Unknown or False)
@@ -353,7 +371,11 @@ kubectl get isvc sklearn-iris -n kserve-test
 ```sh
 cat <<EOF > "./iris-input.json"
 {
-	@@ -297,28 +397,36 @@ cat <<EOF > "./iris-input.json"
+  "instances": [
+    [6.8,  2.8,  4.8,  1.4],
+    [6.0,  3.4,  4.5,  1.6]
+  ]
+}
 EOF
 ```
 

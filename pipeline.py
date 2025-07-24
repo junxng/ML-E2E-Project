@@ -5,9 +5,9 @@ import kfp
 from kfp.dsl import Input, Output, Dataset, Model, component
 import json
 import os 
- 
+
 # Step 1: Load Dataset
-@dsl.component(base_image="python:3.9")
+@dsl.component(base_image="python:3.12")
 def load_data(output_csv: Output[Dataset]):
     import subprocess
     subprocess.run(["pip", "install", "pandas", "scikit-learn"], check=True)
@@ -22,7 +22,7 @@ def load_data(output_csv: Output[Dataset]):
     df.to_csv(output_csv.path, index=False)
 
 # Step 2: Preprocess Data
-@dsl.component(base_image="python:3.9")
+@dsl.component(base_image="python:3.12")
 def preprocess_data(input_csv: Input[Dataset], output_train: Output[Dataset], output_test: Output[Dataset], 
                     output_ytrain: Output[Dataset], output_ytest: Output[Dataset]):
     import subprocess
@@ -89,7 +89,7 @@ def preprocess_data(input_csv: Input[Dataset], output_train: Output[Dataset], ou
 
 # Step 3: Train Model
 @dsl.component(
-    base_image="python:3.9",
+    base_image="python:3.12",
     packages_to_install=[
         "pandas",
         "scikit-learn",
@@ -177,7 +177,7 @@ def train_model(
         raise
 
 # Step 4: Evaluate Model
-@dsl.component(base_image="python:3.9")
+@dsl.component(base_image="python:3.12")
 def evaluate_model(test_data: Input[Dataset], ytest_data: Input[Dataset], model: Input[Model], metrics_output: Output[Dataset]):
     import subprocess
     subprocess.run(["pip", "install", "pandas", "scikit-learn", "matplotlib", "joblib"], check=True)
@@ -224,7 +224,7 @@ def evaluate_model(test_data: Input[Dataset], ytest_data: Input[Dataset], model:
 def ml_pipeline(
     aws_access_key_id: str = os.getenv('AWS_ACCESS_KEY_ID'),
     aws_secret_access_key: str = os.getenv('AWS_SECRET_ACCESS_KEY'),
-    s3_bucket: str = "kubeflow-bucket-iquant00",
+    s3_bucket: str = "kubeflow-bucket-dungnq49",
     s3_key: str = "models/iris"
 ):
     # Step 1: Load Dataset

@@ -53,3 +53,4 @@ config.local.yaml
 htmlcov/
 .pytest_cache/
 .mypy_cache/
+.aider*
